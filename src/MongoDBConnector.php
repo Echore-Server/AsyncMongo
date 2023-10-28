@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Echore\AsyncMongo;
 
-use Echore\AsyncMongo\inbound\SessionMediator;
 use Echore\AsyncMongo\inbound\SessionStoreIdManager;
-use Echore\AsyncMongo\outbound\operation\executable\MongoExecutableOperation;
-use Echore\AsyncMongo\outbound\operation\MongoOperation;
-use Echore\AsyncMongo\outbound\operation\MongoStartSessionOperation;
-use Echore\AsyncMongo\outbound\operation\MongoSyncSessionOperation;
+use Echore\AsyncMongo\operation\executable\MongoExecutableOperation;
+use Echore\AsyncMongo\operation\MongoOperation;
+use Echore\AsyncMongo\operation\MongoStartSessionOperation;
+use Echore\AsyncMongo\operation\MongoSyncSessionOperation;
+use Echore\AsyncMongo\session\SessionMediator;
 use MongoDB\Client;
 use MongoDB\Driver\Session;
 use RuntimeException;

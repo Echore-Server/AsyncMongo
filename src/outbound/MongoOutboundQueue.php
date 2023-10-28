@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Echore\AsyncMongo\outbound;
 
-use Echore\AsyncMongo\outbound\operation\MongoOperation;
+use Echore\AsyncMongo\operation\MongoOperation;
 use pmmp\thread\ThreadSafe;
 use pmmp\thread\ThreadSafeArray;
 

@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Echore\AsyncMongo;
 
-use Echore\AsyncMongo\outbound\operation\executable\MongoCountDocumentsOperation;
-use Echore\AsyncMongo\outbound\operation\executable\MongoDeleteManyOperation;
-use Echore\AsyncMongo\outbound\operation\executable\MongoDeleteOneOperation;
-use Echore\AsyncMongo\outbound\operation\executable\MongoFindOneOperation;
-use Echore\AsyncMongo\outbound\operation\executable\MongoFindOperation;
-use Echore\AsyncMongo\outbound\operation\executable\MongoInsertManyOperation;
-use Echore\AsyncMongo\outbound\operation\executable\MongoInsertOneOperation;
-use Echore\AsyncMongo\outbound\operation\executable\MongoReplaceOneOperation;
-use Echore\AsyncMongo\outbound\operation\executable\MongoUpdateManyOperation;
-use Echore\AsyncMongo\outbound\operation\executable\MongoUpdateOneOperation;
+use Echore\AsyncMongo\operation\executable\MongoCountDocumentsOperation;
+use Echore\AsyncMongo\operation\executable\MongoDeleteManyOperation;
+use Echore\AsyncMongo\operation\executable\MongoDeleteOneOperation;
+use Echore\AsyncMongo\operation\executable\MongoFindOneOperation;
+use Echore\AsyncMongo\operation\executable\MongoFindOperation;
+use Echore\AsyncMongo\operation\executable\MongoInsertManyOperation;
+use Echore\AsyncMongo\operation\executable\MongoInsertOneOperation;
+use Echore\AsyncMongo\operation\executable\MongoReplaceOneOperation;
+use Echore\AsyncMongo\operation\executable\MongoUpdateManyOperation;
+use Echore\AsyncMongo\operation\executable\MongoUpdateOneOperation;
 
 class DelegateCollection {
 
