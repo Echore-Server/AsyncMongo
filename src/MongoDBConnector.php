@@ -62,8 +62,7 @@ class MongoDBConnector {
 
 		if ($operation->doesParse()) {
 			if (!isset($options['typeMap'])) {
-				//$options['typeMap'] = $this->client->getTypeMap();
-				// fixme: generates PHP Incomplete class
+				$options['typeMap'] = $this->client->getTypeMap();
 			}
 		}
 
