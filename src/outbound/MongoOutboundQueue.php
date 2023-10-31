@@ -31,6 +31,7 @@ class MongoOutboundQueue extends ThreadSafe {
 
 	public function dispose(): void {
 		$this->disposed = true;
+		$this->notify();
 	}
 
 	public function fetchOperation(int $channel): ?string {

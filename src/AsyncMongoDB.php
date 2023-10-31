@@ -75,6 +75,10 @@ class AsyncMongoDB {
 		);
 	}
 
+	public function close(): void {
+		$this->threadPool->quitGracefully();
+	}
+
 	/**
 	 * @param string $databaseName
 	 * @param string $collectionName
