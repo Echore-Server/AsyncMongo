@@ -45,6 +45,86 @@ $mongo->insertOne(
 );
 ```
 
+### InsertMany
+
+```php
+use Echore\AsyncMongo\AsyncMongoDB;
+use Echore\AsyncMongo\result\MongoInsertManyResult;use Echore\AsyncMongo\result\MongoInsertOneResult;
+
+/**
+ * @var AsyncMongoDB $mongo
+ */
+
+$mongo->insertMany(
+    "databaseName",
+    "collectionName",
+    $documents,
+    $options
+)->schedule(
+    function(MongoInsertManyResult $result): void{
+        echo "Inserted {$result->getInsertedCount()}!" . PHP_EOL;
+        var_dump($result);
+    }
+    function(Throwable $e): void{
+        echo "Error occurred: {$e->getMessage()}" . PHP_EOL;
+    }
+);
+```
+
+### Find
+
+```php
+use Echore\AsyncMongo\AsyncMongoDB;
+use Echore\AsyncMongo\result\MongoCursorResult;use Echore\AsyncMongo\result\MongoInsertOneResult;
+
+/**
+ * @var AsyncMongoDB $mongo
+ */
+
+$mongo->find(
+    "databaseName",
+    "collectionName",
+    $filter,
+    $options
+)->schedule(
+    function(MongoCursorResult $result): void{
+        $count = count($result->getArray());
+        echo "Matched documents: {$count}!" . PHP_EOL;
+        var_dump($result);
+    }
+    function(Throwable $e): void{
+        echo "Error occurred: {$e->getMessage()}" . PHP_EOL;
+    }
+);
+```
+
+### FindOne
+
+```php
+use Echore\AsyncMongo\AsyncMongoDB;
+use Echore\AsyncMongo\result\MongoCursorResult;use Echore\AsyncMongo\result\MongoDocumentResult;use Echore\AsyncMongo\result\MongoInsertOneResult;
+
+/**
+ * @var AsyncMongoDB $mongo
+ */
+
+$mongo->findOne(
+    "databaseName",
+    "collectionName",
+    $filter,
+    $options
+)->schedule(
+    function(MongoDocumentResult $result): void{
+        $count = $result->getDocument() !== null ? 1 : 0;
+        echo "Matched document: {$count}!" . PHP_EOL;
+        var_dump($result);
+    }
+    function(Throwable $e): void{
+        echo "Error occurred: {$e->getMessage()}" . PHP_EOL;
+    }
+);
+```
+
 ## Advanced Usage
 
 ### Transaction
