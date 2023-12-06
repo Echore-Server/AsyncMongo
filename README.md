@@ -19,6 +19,17 @@ $mongo = new AsyncMongoDB(
 );
 ```
 
+### Close threads
+
+```php
+/**
+ * @var AsyncMongoDB $mongo
+ */
+use Echore\AsyncMongo\AsyncMongoDB;
+
+$mongo->close();
+```
+
 ### InsertOne
 
 ```php
@@ -87,6 +98,33 @@ $mongo->find(
     $filter,
     $options
 )->schedule(
+    function(MongoCursorResult $result): void{
+        $count = count($result->getArray());
+        echo "Matched documents: {$count}!" . PHP_EOL;
+        var_dump($result);
+    }
+    function(Throwable $e): void{
+        echo "Error occurred: {$e->getMessage()}" . PHP_EOL;
+    }
+);
+```
+
+Set maximum number of results (5)
+
+```php
+use Echore\AsyncMongo\AsyncMongoDB;
+use Echore\AsyncMongo\result\MongoCursorResult;use Echore\AsyncMongo\result\MongoInsertOneResult;
+
+/**
+ * @var AsyncMongoDB $mongo
+ */
+
+$mongo->find(
+    "databaseName",
+    "collectionName",
+    $filter,
+    $options
+)->limit(5)->schedule(
     function(MongoCursorResult $result): void{
         $count = count($result->getArray());
         echo "Matched documents: {$count}!" . PHP_EOL;
