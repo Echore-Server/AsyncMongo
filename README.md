@@ -163,6 +163,31 @@ $mongo->findOne(
 );
 ```
 
+### CountDocuments
+
+```php
+use Echore\AsyncMongo\AsyncMongoDB;
+use Echore\AsyncMongo\result\MongoCursorResult;use Echore\AsyncMongo\result\MongoDocumentResult;use Echore\AsyncMongo\result\MongoInsertOneResult;use Echore\AsyncMongo\result\MongoValueResult;
+
+/**
+ * @var AsyncMongoDB $mongo
+ */
+
+$mongo->countDocuments(
+    "databaseName",
+    "collectionName",
+    $filter,
+    $options
+)->schedule(
+    function(MongoValueResult $result): void{
+        echo "Matched document: {$result->getPositiveInt()}!" . PHP_EOL;
+    }
+    function(Throwable $e): void{
+        echo "Error occurred: {$e->getMessage()}" . PHP_EOL;
+    }
+);
+```
+
 ## Advanced Usage
 
 ### Transaction
