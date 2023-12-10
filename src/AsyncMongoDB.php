@@ -249,6 +249,12 @@ class AsyncMongoDB {
 		});
 	}
 
+	/**
+	 * @param callable $handler
+	 * @param MongoOperation ...$operations
+	 * @return void
+	 * @deprecated
+	 */
 	public function sequentially(callable $handler, MongoOperation ...$operations): void {
 		$successResults = [];
 		$errorResults = [];
