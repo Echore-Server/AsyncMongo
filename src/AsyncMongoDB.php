@@ -186,7 +186,7 @@ class AsyncMongoDB {
 				};
 
 				foreach ($transactions as $k => $op) {
-					$op->schedule(
+					$op->setSession($session)->schedule(
 						function(IMongoResult $result) use ($k, &$count, &$successResults, $transactionCount, $finalize): void {
 							$successResults[$k] = $result;
 							$count++;
