@@ -173,7 +173,7 @@ class AsyncMongoDB {
 					($observer)($successResults, $errorResults, $session);
 
 					$session->sync(fn() => $session->end()->sync($handler));
-				});
+				}, ...$transactions);
 			});
 		});
 	}
