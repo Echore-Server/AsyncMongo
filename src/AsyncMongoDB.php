@@ -100,16 +100,17 @@ class AsyncMongoDB {
 	 * @param T $operation
 	 * @param callable|null $overrideOnSuccess
 	 * @param callable|null $overrideCatchError
+	 * @param int|null $channel
 	 * @return T
 	 */
-	public function track(mixed $operation, ?callable $overrideOnSuccess = null, ?callable $overrideCatchError = null): mixed {
+	public function track(mixed $operation, ?callable $overrideOnSuccess = null, ?callable $overrideCatchError = null, ?int $channel = null): mixed {
 		if ($operation->getTrackId() !== null) {
 			throw new RuntimeException("Operation({$operation->getTrackId()}) is already tracked");
 		}
 
 		$operation->setTrackId($this->nextTrackId++);
 
-		$operation->makeSchedulable(function(?callable $onSuccess, ?callable $catchError = null) use ($operation, $overrideCatchError, $overrideOnSuccess): void {
+		$operation->makeSchedulable(function(?callable $onSuccess, ?callable $catchError = null) use ($operation, $overrideCatchError, $overrideOnSuccess, $channel): void {
 			$this->handlers[$operation->getTrackId()] = function(MongoExecutionOK|MongoExecutionError $executionResult, int $trackId) use ($operation, $onSuccess, $catchError, $overrideOnSuccess, $overrideCatchError): void {
 				if ($executionResult instanceof MongoExecutionOK) {
 					if ($onSuccess !== null && $overrideOnSuccess === null) {
@@ -134,8 +135,6 @@ class AsyncMongoDB {
 					}
 				}
 			};
-
-			$channel = null;
 
 			if ($operation instanceof ISessionHolder && $operation->getSessionNullable() !== null) {
 				$channel = $this->threadPool->getSessionStoreIdManager()->inquireThreadNumberFor($operation->getSessionNotNull()->getStoreId());
