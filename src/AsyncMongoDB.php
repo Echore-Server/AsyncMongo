@@ -9,6 +9,7 @@ use Echore\AsyncMongo\inbound\MongoExecutionOK;
 use Echore\AsyncMongo\operation\executable\MongoCountDocumentsOperation;
 use Echore\AsyncMongo\operation\executable\MongoDeleteManyOperation;
 use Echore\AsyncMongo\operation\executable\MongoDeleteOneOperation;
+use Echore\AsyncMongo\operation\executable\MongoExecutableOperation;
 use Echore\AsyncMongo\operation\executable\MongoFindOneOperation;
 use Echore\AsyncMongo\operation\executable\MongoFindOperation;
 use Echore\AsyncMongo\operation\executable\MongoInsertManyOperation;
@@ -23,6 +24,7 @@ use Echore\AsyncMongo\operation\MongoSyncSessionOperation;
 use Echore\AsyncMongo\result\IMongoResult;
 use Echore\AsyncMongo\result\MongoSessionResult;
 use Echore\AsyncMongo\session\SessionMediator;
+use InvalidArgumentException;
 use LogicException;
 use pocketmine\Server;
 use pocketmine\snooze\SleeperHandlerEntry;
@@ -164,15 +166,45 @@ class AsyncMongoDB {
 		return $this->track(new MongoInsertManyOperation($databaseName, $collectionName, $documents, $options));
 	}
 
-	public function transaction(callable $observer, callable $handler, MongoOperation ...$transactions): void {
+	public function transaction(callable $observer, callable $handler, MongoExecutableOperation ...$transactions): void {
+		if (count($transactions) === 0) {
+			throw new InvalidArgumentException("Specify at least one operation");
+		}
+
 		$this->startSession()->schedule(function(MongoSessionResult $result) use ($observer, $handler, $transactions): void {
 			$session = $result->getSession();
 			$session->start()->sync(function() use ($observer, $transactions, $session, $handler): void {
-				$this->sequentially(function(array $successResults, array $errorResults) use ($observer, $handler, $transactions, $session): void {
+				$successResults = [];
+				$errorResults = [];
+				$count = 0;
+				$transactionCount = count($transactions);
+
+				$finalize = function() use ($observer, &$successResults, &$errorResults, $session, $handler): void {
 					($observer)($successResults, $errorResults, $session);
 
 					$session->sync(fn() => $session->end()->sync($handler));
-				}, ...$transactions);
+				};
+
+				foreach ($transactions as $k => $op) {
+					$op->schedule(
+						function(IMongoResult $result) use ($k, &$count, &$successResults, $transactionCount, $finalize): void {
+							$successResults[$k] = $result;
+							$count++;
+
+							if ($count === $transactionCount) {
+								$finalize();
+							}
+						},
+						function(Throwable $e) use ($k, &$count, &$errorResults, $transactionCount, $finalize): void {
+							$errorResults[$k] = $e;
+							$count++;
+
+							if ($count === $transactionCount) {
+								$finalize();
+							}
+						}
+					);
+				}
 			});
 		});
 	}
