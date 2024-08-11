@@ -18,6 +18,8 @@ use Echore\AsyncMongo\operation\executable\MongoReplaceOneOperation;
 use Echore\AsyncMongo\operation\executable\MongoUpdateManyOperation;
 use Echore\AsyncMongo\operation\executable\MongoUpdateOneOperation;
 use Echore\AsyncMongo\operation\ISessionHolder;
+use Echore\AsyncMongo\operation\MongoDumpMemoryOperation;
+use Echore\AsyncMongo\operation\MongoFetchThreadStatusOperation;
 use Echore\AsyncMongo\operation\MongoOperation;
 use Echore\AsyncMongo\operation\MongoStartSessionOperation;
 use Echore\AsyncMongo\operation\MongoSyncSessionOperation;
@@ -148,6 +150,35 @@ class AsyncMongoDB {
 		});
 
 		return $operation;
+	}
+
+	public function dumpMemory(
+		string $outputFolder,
+		int    $maxNesting,
+		int    $maxStringSize,
+		int    $threadChannel
+	): MongoDumpMemoryOperation {
+		return $this->track(new MongoDumpMemoryOperation($outputFolder, $maxNesting, $maxStringSize), channel: $threadChannel);
+	}
+
+	/**
+	 * @return MongoDBThreadPool
+	 */
+	public function getThreadPool(): MongoDBThreadPool {
+		return $this->threadPool;
+	}
+
+	public function fetchThreadStatus(
+		int $threadChannel
+	): MongoFetchThreadStatusOperation {
+		return $this->track(new MongoFetchThreadStatusOperation(), channel: $threadChannel);
+	}
+
+	/**
+	 * @return int
+	 */
+	public function getNextTrackId(): int {
+		return $this->nextTrackId;
 	}
 
 	/**

@@ -74,6 +74,20 @@ class MongoDBThreadPool {
 	}
 
 	/**
+	 * @return int
+	 */
+	public function getPoolLimit(): int {
+		return $this->poolLimit;
+	}
+
+	/**
+	 * @return int[]
+	 */
+	public function getThreadNumbers(): array {
+		return array_keys($this->threads);
+	}
+
+	/**
 	 * @return SessionStoreIdManager
 	 */
 	public function getSessionStoreIdManager(): SessionStoreIdManager {
@@ -110,6 +124,13 @@ class MongoDBThreadPool {
 		foreach ($this->threads as $thread) {
 			$thread->quitGracefully();
 		}
+	}
+
+	/**
+	 * @return array<int, MongoDBThread>
+	 */
+	public function getThreads(): array {
+		return $this->threads;
 	}
 
 	protected function getFineThreadChannel(): int {

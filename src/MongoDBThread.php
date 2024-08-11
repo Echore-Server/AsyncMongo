@@ -9,12 +9,17 @@ use Echore\AsyncMongo\inbound\MongoExecutionOK;
 use Echore\AsyncMongo\inbound\MongoInboundQueue;
 use Echore\AsyncMongo\inbound\SessionStoreIdManager;
 use Echore\AsyncMongo\operation\executable\MongoExecutableOperation;
+use Echore\AsyncMongo\operation\MongoDumpMemoryOperation;
 use Echore\AsyncMongo\operation\MongoOperation;
 use Echore\AsyncMongo\outbound\MongoOutboundQueue;
 use MongoDB\Client;
+use pocketmine\MemoryManager;
 use pocketmine\snooze\SleeperHandlerEntry;
 use pocketmine\thread\Thread;
+use PrefixedLogger;
 use RuntimeException;
+use SimpleLogger;
+use stdClass;
 use Throwable;
 
 class MongoDBThread extends Thread {
@@ -74,7 +79,9 @@ class MongoDBThread extends Thread {
 		$client = new Client($this->uri, unserialize($this->uriOptions), unserialize($this->driverOptions));
 		$connector = new MongoDBConnector($client, $this->sessionStoreIdManager, $this->threadNumber);
 		$notifier = $this->sleeperEntry->createNotifier();
-		
+
+		$logger = new PrefixedLogger(new SimpleLogger(), "AsyncMongoDB#$this->threadNumber");
+
 		while (!$this->isKilled) {
 			$raw = $this->outbound->fetchOperation($this->threadNumber);
 
@@ -93,6 +100,14 @@ class MongoDBThread extends Thread {
 			}
 
 			$this->busy = true;
+			if ($op instanceof MongoDumpMemoryOperation) {
+				$std = new stdClass();
+				$std->thread = $this;
+				$std->client = $client;
+				$std->connector = $connector;
+				MemoryManager::dumpMemory($std, $op->getOutputFolder(), $op->getMaxNesting(), $op->getMaxStringSize(), $logger);
+			}
+
 			$result = $connector->operate($op);
 
 			if ($result instanceof Throwable) {

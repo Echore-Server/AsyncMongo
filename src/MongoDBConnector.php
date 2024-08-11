@@ -6,6 +6,8 @@ namespace Echore\AsyncMongo;
 
 use Echore\AsyncMongo\inbound\SessionStoreIdManager;
 use Echore\AsyncMongo\operation\executable\MongoExecutableOperation;
+use Echore\AsyncMongo\operation\MongoDumpMemoryOperation;
+use Echore\AsyncMongo\operation\MongoFetchThreadStatusOperation;
 use Echore\AsyncMongo\operation\MongoOperation;
 use Echore\AsyncMongo\operation\MongoStartSessionOperation;
 use Echore\AsyncMongo\operation\MongoSyncSessionOperation;
@@ -174,6 +176,13 @@ class MongoDBConnector {
 			$this->observeSessionMediator($operation->getSessionNotNull());
 
 			return $operation->getSessionNotNull();
+		} elseif ($operation instanceof MongoFetchThreadStatusOperation) {
+			$memoryUsage = memory_get_usage();
+			$realMemoryUsage = memory_get_usage(true);
+
+			return [$memoryUsage, $realMemoryUsage];
+		} elseif ($operation instanceof MongoDumpMemoryOperation) {
+			return null;
 		}
 
 		return null;
