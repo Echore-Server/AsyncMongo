@@ -1,6 +1,6 @@
 ---
 name: AsyncMongo
-version: 1.4.0
+version: 1.4.1
 main: Echore\AsyncMongo\Main
 api: 5.6.1
 src-namespace-prefix: Echore\AsyncMongo

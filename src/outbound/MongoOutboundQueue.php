@@ -10,16 +10,22 @@ use pmmp\thread\ThreadSafeArray;
 
 class MongoOutboundQueue extends ThreadSafe {
 
-	private ThreadSafeArray $scheduleByChannel;
-
 	private ThreadSafeArray $schedule;
+
+	private ThreadSafeArray $channel;
 
 	private bool $disposed;
 
+	private int $latestOffset;
+
+	private int $currentOffset;
+
 	public function __construct() {
-		$this->scheduleByChannel = new ThreadSafeArray();
 		$this->schedule = new ThreadSafeArray();
+		$this->channel = new ThreadSafeArray();
 		$this->disposed = false;
+		$this->latestOffset = 0;
+		$this->currentOffset = 0;
 	}
 
 	/**
@@ -36,33 +42,21 @@ class MongoOutboundQueue extends ThreadSafe {
 
 	public function fetchOperation(int $channel): ?string {
 		return $this->synchronized(function() use ($channel): ?string {
-			if (!isset($this->scheduleByChannel[$channel])) {
-				$this->scheduleByChannel[$channel] = new ThreadSafeArray();
-			}
-
-			while (($this->scheduleByChannel[$channel]->count() === 0 && $this->schedule->count() === 0) && !$this->disposed) {
+			while (($this->schedule->count() === 0 || ($this->channel[$this->currentOffset] !== null && $this->channel[$this->currentOffset] !== $channel)) && !$this->disposed) {
 				$this->wait();
 			}
 
-			if ($this->scheduleByChannel[$channel]->count() > 0) {
-				return $this->scheduleByChannel[$channel]->shift();
-			} else {
-				return $this->schedule->shift();
-			}
+			$this->currentOffset++;
+			$this->channel->shift();
+
+			return $this->schedule->shift();
 		});
 	}
 
 	public function schedule(MongoOperation $operation, ?int $channel): void {
 		$this->synchronized(function() use ($operation, $channel): void {
-			if ($channel !== null) {
-				if (!isset($this->scheduleByChannel[$channel])) {
-					$this->scheduleByChannel[$channel] = new ThreadSafeArray();
-				}
-
-				$this->scheduleByChannel[$channel][] = serialize($operation);
-			} else {
-				$this->schedule[] = serialize($operation);
-			}
+			$this->schedule[++$this->latestOffset] = serialize($operation);
+			$this->channel[$this->latestOffset] = $channel;
 			$this->notify();
 		});
 	}

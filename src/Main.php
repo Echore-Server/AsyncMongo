@@ -7,5 +7,4 @@ namespace Echore\AsyncMongo;
 use pocketmine\plugin\PluginBase;
 
 class Main extends PluginBase {
-
 }

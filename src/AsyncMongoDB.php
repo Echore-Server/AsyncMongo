@@ -53,6 +53,10 @@ class AsyncMongoDB {
 		private readonly array   $uriOptions,
 		private readonly array   $driverOptions
 	) {
+
+		if ($poolLimit !== 1) {
+			throw new InvalidArgumentException("In AsyncMongo v1.4.1, pool limit is fixed to 1. (See: AsyncMongo#2)");
+		}
 		$this->nextTrackId = 0;
 		$this->sleeperEntry = $server->getTickSleeper()->addNotifier(function(): void {
 			assert($this->threadPool instanceof MongoDBThreadPool);
