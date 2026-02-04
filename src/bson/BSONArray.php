@@ -6,9 +6,12 @@ namespace Echore\AsyncMongo\bson;
 
 use ArrayObject;
 use JsonSerializable;
+use MongoDB\BSON\Document;
+use MongoDB\BSON\PackedArray;
 use MongoDB\BSON\Serializable;
 use MongoDB\BSON\Unserializable;
 use ReturnTypeWillChange;
+use stdClass;
 use function MongoDB\recursive_copy;
 
 class BSONArray extends ArrayObject implements JsonSerializable, Serializable, Unserializable {
@@ -45,7 +48,7 @@ class BSONArray extends ArrayObject implements JsonSerializable, Serializable, U
 	 * @return array
 	 */
 	#[ReturnTypeWillChange]
-	public function bsonSerialize() {
+	public function bsonSerialize(): Document|PackedArray|array|stdClass {
 		return array_values($this->getArrayCopy());
 	}
 
@@ -56,7 +59,7 @@ class BSONArray extends ArrayObject implements JsonSerializable, Serializable, U
 	 * @param array $data Array data
 	 */
 	#[ReturnTypeWillChange]
-	public function bsonUnserialize(array $data) {
+	public function bsonUnserialize(array $data): void {
 		self::__construct($data);
 	}
 

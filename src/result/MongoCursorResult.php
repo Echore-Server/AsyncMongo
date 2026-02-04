@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Echore\AsyncMongo\result;
 
+use MongoDB\BSON\Int64;
 use MongoDB\Driver\Cursor;
-use MongoDB\Driver\CursorId;
 
 class MongoCursorResult implements IMongoResult {
 
@@ -13,9 +13,9 @@ class MongoCursorResult implements IMongoResult {
 
 	private bool $dead;
 
-	private CursorId $id;
+	private Int64 $id;
 
-	public function __construct(array $array, bool $dead, CursorId $id) {
+	public function __construct(array $array, bool $dead, Int64 $id) {
 		$this->array = $array;
 		$this->dead = $dead;
 		$this->id = $id;
@@ -33,7 +33,7 @@ class MongoCursorResult implements IMongoResult {
 		return $this->dead;
 	}
 
-	public function getId(): CursorId {
+	public function getId(): Int64 {
 		return $this->id;
 	}
 
