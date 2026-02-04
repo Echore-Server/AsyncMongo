@@ -10,6 +10,7 @@ use Echore\AsyncMongo\operation\executable\MongoCountDocumentsOperation;
 use Echore\AsyncMongo\operation\executable\MongoDeleteManyOperation;
 use Echore\AsyncMongo\operation\executable\MongoDeleteOneOperation;
 use Echore\AsyncMongo\operation\executable\MongoExecutableOperation;
+use Echore\AsyncMongo\operation\executable\MongoFindOneAndUpdateOperation;
 use Echore\AsyncMongo\operation\executable\MongoFindOneOperation;
 use Echore\AsyncMongo\operation\executable\MongoFindOperation;
 use Echore\AsyncMongo\operation\executable\MongoInsertManyOperation;
@@ -83,8 +84,17 @@ class AsyncMongoDB {
 		);
 	}
 
+	public function getUriOptions(): array {
+		return $this->uriOptions;
+	}
+	
+	public function getUri(): ?string {
+		return $this->uri;
+	}
+
 	public function close(): void {
 		$this->threadPool->quitGracefully();
+		$this->server->getTickSleeper()->removeNotifier($this->sleeperEntry->getNotifierId());
 	}
 
 	/**
@@ -149,11 +159,27 @@ class AsyncMongoDB {
 			}
 
 			$this->threadPool->schedule($operation, $channel);
-
-			$this->server->getLogger()->debug("Operation scheduled (trackId: {$operation->getTrackId()}, channel: $channel)");
 		});
 
 		return $operation;
+	}
+
+	/**
+	 * @param string $database
+	 * @param string $collectionName
+	 * @param $filter
+	 * @param $update
+	 * @param array $options
+	 * @return MongoFindOneAndUpdateOperation
+	 */
+	public function findOneAndUpdate(
+		string $database,
+		string $collectionName,
+		       $filter,
+		       $update,
+		array  $options = []
+	): MongoFindOneAndUpdateOperation {
+		return $this->track(new MongoFindOneAndUpdateOperation($database, $collectionName, $filter, $update, $options));
 	}
 
 	public function dumpMemory(

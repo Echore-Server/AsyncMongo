@@ -13,10 +13,11 @@ use Echore\AsyncMongo\operation\MongoStartSessionOperation;
 use Echore\AsyncMongo\operation\MongoSyncSessionOperation;
 use Echore\AsyncMongo\session\SessionMediator;
 use MongoDB\Client;
+use MongoDB\Driver\ReadConcern;
 use MongoDB\Driver\Session;
+use MongoDB\Driver\WriteConcern;
 use RuntimeException;
 use Throwable;
-use function MongoDB\is_in_transaction;
 use function MongoDB\select_server;
 
 class MongoDBConnector {
@@ -28,11 +29,14 @@ class MongoDBConnector {
 	 */
 	private array $sessions;
 
+	private array $sessionOptions;
+
 	private SessionStoreIdManager $storeIdManager;
 
 	public function __construct(Client $client, SessionStoreIdManager $storeIdManager, private readonly int $threadNumber) {
 		$this->client = $client;
 		$this->sessions = [];
+		$this->sessionOptions = [];
 		$this->storeIdManager = $storeIdManager;
 	}
 
@@ -46,18 +50,20 @@ class MongoDBConnector {
 	public function mongoizeOptions(MongoExecutableOperation $operation): void {
 		$options = $operation->getOptions();
 
+		$this->parseConcerns($options);
+
 		if ($operation->doesWrite()) {
-			if (!isset($options['writeConcern']) && !is_in_transaction($options)) {
+			if (!isset($options['writeConcern']) && $operation->getSessionNullable() === null) {
 				$options['writeConcern'] = $this->client->getWriteConcern();
 			}
 		}
 
 		if ($operation->doesRead()) {
-			if (!isset($options['readPreference']) && !is_in_transaction($options)) {
+			if (!isset($options['readPreference']) && $operation->getSessionNullable() === null) {
 				$options['readPreference'] = $this->client->getReadPreference();
 			}
 
-			if (!isset($options['readConcern']) && !is_in_transaction($options)) {
+			if (!isset($options['readConcern']) && $operation->getSessionNullable() === null) {
 				$options['readConcern'] = $this->client->getReadConcern();
 			}
 		}
@@ -69,6 +75,16 @@ class MongoDBConnector {
 		}
 
 		$operation->setOptions($options);
+	}
+
+	protected function parseConcerns(array &$options): void {
+		if (isset($options["readConcern"]) && is_array($options["readConcern"])) {
+			$options["readConcern"] = new ReadConcern($options["readConcern"]["level"]);
+		}
+
+		if (isset($options["writeConcern"]) && is_array($options["writeConcern"])) {
+			$options["writeConcern"] = new WriteConcern($options["writeConcern"]["w"], $options["writeConcern"]["wtimeout"] ?? 0, $options["writeConcern"]["journal"] ?? false);
+		}
 	}
 
 	public function operate(MongoOperation $operation): mixed {
@@ -157,9 +173,11 @@ class MongoDBConnector {
 	private function startTransaction(SessionMediator $sessionMediator): void {
 		$session = $this->getSessionNotNull($sessionMediator->getStoreId());
 
-		$session->startTransaction();
+		$session->startTransaction($this->sessionOptions[$sessionMediator->getStoreId()]);
 
 		$sessionMediator->updateStatus(SessionMediator::START);
+
+		unset($this->sessionOptions[$sessionMediator->getStoreId()]);
 	}
 
 	protected function handleOperation(MongoOperation $operation): mixed {
@@ -168,7 +186,10 @@ class MongoDBConnector {
 		if ($operation instanceof MongoStartSessionOperation) {
 			$mediator = new SessionMediator($this->storeIdManager->nextStoreId());
 
-			$this->sessions[$mediator->getStoreId()] = $this->client->startSession($operation->getOptions());
+			$options = $operation->getOptions();
+			$this->parseConcerns($options);
+			$this->sessions[$mediator->getStoreId()] = $this->client->startSession($options);
+			$this->sessionOptions[$mediator->getStoreId()] = $options;
 			$this->storeIdManager->reportThreadNumber($mediator->getStoreId(), $this->threadNumber);
 
 			return $mediator;

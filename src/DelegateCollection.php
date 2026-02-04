@@ -7,6 +7,7 @@ namespace Echore\AsyncMongo;
 use Echore\AsyncMongo\operation\executable\MongoCountDocumentsOperation;
 use Echore\AsyncMongo\operation\executable\MongoDeleteManyOperation;
 use Echore\AsyncMongo\operation\executable\MongoDeleteOneOperation;
+use Echore\AsyncMongo\operation\executable\MongoFindOneAndUpdateOperation;
 use Echore\AsyncMongo\operation\executable\MongoFindOneOperation;
 use Echore\AsyncMongo\operation\executable\MongoFindOperation;
 use Echore\AsyncMongo\operation\executable\MongoInsertManyOperation;
@@ -22,6 +23,18 @@ class DelegateCollection {
 		private readonly string       $databaseName,
 		private readonly string       $collectionName
 	) {
+	}
+
+	public function equals(DelegateCollection $a): bool{
+		return $this->collectionName === $a->collectionName && $this->databaseName === $a->databaseName;
+	}
+
+	public function getCollectionName(): string {
+		return $this->collectionName;
+	}
+
+	public function getDatabaseName(): string {
+		return $this->databaseName;
 	}
 
 	public function insertOne($document, array $options = []): MongoInsertOneOperation {
@@ -62,6 +75,10 @@ class DelegateCollection {
 
 	public function updateMany($filter, $update, array $options = []): MongoUpdateManyOperation {
 		return $this->mongo->updateMany($this->databaseName, $this->collectionName, $filter, $update, $options);
+	}
+
+	public function findOneAndUpdate($filter, $update, array $options = []): MongoFindOneAndUpdateOperation {
+		return $this->mongo->findOneAndUpdate($this->databaseName, $this->collectionName, $filter, $update, $options);
 	}
 
 }
