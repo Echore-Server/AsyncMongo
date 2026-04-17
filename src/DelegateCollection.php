@@ -25,6 +25,10 @@ class DelegateCollection {
 	) {
 	}
 
+	public function hash(): string{
+		return md5($this->databaseName . "_" . $this->collectionName);
+	}
+
 	public function equals(DelegateCollection $a): bool{
 		return $this->collectionName === $a->collectionName && $this->databaseName === $a->databaseName;
 	}

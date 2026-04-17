@@ -6,8 +6,13 @@ namespace Echore\AsyncMongo\operation;
 
 use Closure;
 use Echore\AsyncMongo\result\IMongoResult;
+use Echore\AsyncMongo\result\MongoSessionResult;
 use RuntimeException;
+use Throwable;
 
+/**
+ * @template T
+ */
 abstract class MongoOperation {
 
 	protected ?int $trackId = null;
@@ -34,6 +39,11 @@ abstract class MongoOperation {
 		$this->scheduleCallback = $callback(...);
 	}
 
+	/**
+	 * @param (callable(T): void)|null $onSuccess
+	 * @param (callable(Throwable): void)|null $catchError
+	 * @return $this
+	 */
 	public function schedule(?callable $onSuccess = null, ?callable $catchError = null): static {
 		if ($this->scheduleCallback === null) {
 			throw new RuntimeException("Cannot schedule: unknown schedule method");

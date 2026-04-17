@@ -73,7 +73,6 @@ class MongoDBConnector {
 				$options['typeMap'] = $this->client->getTypeMap();
 			}
 		}
-
 		$operation->setOptions($options);
 	}
 
@@ -152,6 +151,8 @@ class MongoDBConnector {
 		$session->commitTransaction();
 
 		$sessionMediator->updateStatus(SessionMediator::COMMIT);
+
+		unset($this->sessions[$sessionMediator->getStoreId()]);
 	}
 
 	private function abortTransaction(SessionMediator $sessionMediator): void {
@@ -160,6 +161,8 @@ class MongoDBConnector {
 		$session->abortTransaction();
 
 		$sessionMediator->updateStatus(SessionMediator::ABORT);
+
+		unset($this->sessions[$sessionMediator->getStoreId()]);
 	}
 
 	private function endSession(SessionMediator $sessionMediator): void {
@@ -168,6 +171,8 @@ class MongoDBConnector {
 		$session->endSession();
 
 		$sessionMediator->updateStatus(SessionMediator::END);
+
+		unset($this->sessions[$sessionMediator->getStoreId()]);
 	}
 
 	private function startTransaction(SessionMediator $sessionMediator): void {
@@ -192,6 +197,10 @@ class MongoDBConnector {
 			$this->sessionOptions[$mediator->getStoreId()] = $options;
 			$this->storeIdManager->reportThreadNumber($mediator->getStoreId(), $this->threadNumber);
 
+			if ($operation->isStartsTransaction()) {
+				$this->startTransaction($mediator);
+			}
+
 			return $mediator;
 		} elseif ($operation instanceof MongoSyncSessionOperation) {
 			$this->observeSessionMediator($operation->getSessionNotNull());
@@ -207,5 +216,12 @@ class MongoDBConnector {
 		}
 
 		return null;
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getSessions(): array {
+		return $this->sessions;
 	}
 }

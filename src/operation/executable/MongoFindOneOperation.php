@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Echore\AsyncMongo\operation\executable;
 
+use Echore\AsyncMongo\operation\MongoOperation;
 use Echore\AsyncMongo\result\IMongoResult;
 use Echore\AsyncMongo\result\MongoDocumentResult;
 use MongoDB\Operation\FindOne;
 
 /**
+ * @extends MongoExecutableOperation<MongoDocumentResult>
  * @method self allowDiskUse(bool $v)
  * @method self allowPartialResults(bool $v)
  * @method self batchSize(int $size)

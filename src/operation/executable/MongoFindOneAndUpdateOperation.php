@@ -43,6 +43,20 @@ class MongoFindOneAndUpdateOperation extends MongoExecutableOperation {
 		return new FindOneAndUpdate($this->databaseName, $this->collectionName, $this->filter, $this->update, $this->options);
 	}
 
+	/**
+	 * @return mixed
+	 */
+	public function getFilter() {
+		return $this->filter;
+	}
+
+	/**
+	 * @return mixed
+	 */
+	public function getUpdate() {
+		return $this->update;
+	}
+
 	public function doesWrite(): bool {
 		return true;
 	}

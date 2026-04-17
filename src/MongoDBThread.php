@@ -13,11 +13,13 @@ use Echore\AsyncMongo\operation\MongoDumpMemoryOperation;
 use Echore\AsyncMongo\operation\MongoOperation;
 use Echore\AsyncMongo\outbound\MongoOutboundQueue;
 use MongoDB\Client;
+use MongoDB\Driver\Exception\RuntimeException;
 use pocketmine\MemoryManager;
 use pocketmine\snooze\SleeperHandlerEntry;
 use pocketmine\thread\Thread;
 use PrefixedLogger;
-use RuntimeException;
+use ReflectionClass;
+use ReflectionException;
 use SimpleLogger;
 use stdClass;
 use Throwable;
@@ -83,7 +85,7 @@ class MongoDBThread extends Thread {
 		$logger = new PrefixedLogger(new SimpleLogger(), "AsyncMongoDB#$this->threadNumber");
 
 		while (!$this->isKilled) {
-			$raw = $this->outbound->fetchOperation($this->threadNumber);
+			$raw = $this->outbound->fetchOperation($this->threadNumber, !empty($connector->getSessions()));
 
 			if ($raw === null) {
 				break;
@@ -111,7 +113,15 @@ class MongoDBThread extends Thread {
 			$result = $connector->operate($op);
 
 			if ($result instanceof Throwable) {
-				$executionResult = new MongoExecutionError(new RuntimeException($result->getMessage(), $result->getCode()), $op);
+				$errorLabels = null;
+				if ($result instanceof RuntimeException) {
+					try {
+						$errorLabels = new ReflectionClass(RuntimeException::class)->getProperty("errorLabels")->getValue($result);
+					} catch (ReflectionException) {
+					}
+				}
+				$previousClass = $result->getPrevious() !== null ? $result->getPrevious()::class : null;
+				$executionResult = new MongoExecutionError(new MongoDBException($errorLabels ?? [], $result::class, $previousClass, $result->getMessage(), $result->getCode()), $op);
 			} else {
 				$executionResult = new MongoExecutionOK($op->processResult($result), $op);
 			}

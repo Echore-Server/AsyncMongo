@@ -8,9 +8,26 @@ use Echore\AsyncMongo\result\IMongoResult;
 use Echore\AsyncMongo\result\MongoSessionResult;
 use Echore\AsyncMongo\session\SessionMediator;
 
+/**
+ * @extends MongoOperation<MongoSessionResult>
+ */
 class MongoStartSessionOperation extends MongoOperation {
 
+	private bool $startsTransaction;
+
 	public function __construct(private readonly array $options) {
+		$this->startsTransaction = false;
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function isStartsTransaction(): bool {
+		return $this->startsTransaction;
+	}
+	public function startsTransaction(bool $startsTransaction = true): self {
+		$this->startsTransaction = $startsTransaction;
+		return $this;
 	}
 
 	/**

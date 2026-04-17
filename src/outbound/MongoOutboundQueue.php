@@ -10,27 +10,20 @@ use pmmp\thread\ThreadSafeArray;
 
 class MongoOutboundQueue extends ThreadSafe {
 
-	private ThreadSafeArray $schedule;
+	/** @var ThreadSafeArray<int, ThreadSafeArray<int, string>> */
+	private ThreadSafeArray $byChannel;
 
-	private ThreadSafeArray $channel;
+	/** @var ThreadSafeArray<int, string> */
+	private ThreadSafeArray $broadcast;
 
 	private bool $disposed;
 
-	private int $latestOffset;
-
-	private int $currentOffset;
-
 	public function __construct() {
-		$this->schedule = new ThreadSafeArray();
-		$this->channel = new ThreadSafeArray();
+		$this->byChannel = new ThreadSafeArray();
+		$this->broadcast = new ThreadSafeArray();
 		$this->disposed = false;
-		$this->latestOffset = 0;
-		$this->currentOffset = 0;
 	}
 
-	/**
-	 * @return bool
-	 */
 	public function isDisposed(): bool {
 		return $this->disposed;
 	}
@@ -40,23 +33,43 @@ class MongoOutboundQueue extends ThreadSafe {
 		$this->notify();
 	}
 
-	public function fetchOperation(int $channel): ?string {
-		return $this->synchronized(function() use ($channel): ?string {
-			while (($this->schedule->count() === 0 || ($this->channel[$this->currentOffset] !== null && $this->channel[$this->currentOffset] !== $channel)) && !$this->disposed) {
+	public function fetchOperation(int $channel, bool $onlyTargeted): ?string {
+		return $this->synchronized(function() use ($onlyTargeted, $channel): ?string {
+			while (!$this->disposed) {
+				if (isset($this->byChannel[$channel])) {
+					/** @var ThreadSafeArray $q */
+					$q = $this->byChannel[$channel];
+					if ($q->count() > 0) {
+						return $q->shift();
+					}
+				}
+
+				if (!$onlyTargeted && $this->broadcast->count() > 0) {
+					return $this->broadcast->shift();
+				}
+
 				$this->wait();
 			}
 
-			$this->currentOffset++;
-			$this->channel->shift();
-
-			return $this->schedule->shift();
+			return null;
 		});
 	}
 
 	public function schedule(MongoOperation $operation, ?int $channel): void {
 		$this->synchronized(function() use ($operation, $channel): void {
-			$this->schedule[++$this->latestOffset] = serialize($operation);
-			$this->channel[$this->latestOffset] = $channel;
+			$raw = serialize($operation);
+
+			if ($channel === null) {
+				$this->broadcast[] = $raw;
+			} else {
+				if (!isset($this->byChannel[$channel])) {
+					$this->byChannel[$channel] = new ThreadSafeArray();
+				}
+				/** @var ThreadSafeArray $q */
+				$q = $this->byChannel[$channel];
+				$q[] = $raw;
+			}
+
 			$this->notify();
 		});
 	}

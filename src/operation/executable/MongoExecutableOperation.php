@@ -10,6 +10,10 @@ use Echore\AsyncMongo\session\SessionMediator;
 use MongoDB\Operation\Executable;
 use RuntimeException;
 
+/**
+ * @template T
+ * @extends MongoOperation<T>
+ */
 abstract class MongoExecutableOperation extends MongoOperation implements ISessionHolder {
 
 	protected string $databaseName;

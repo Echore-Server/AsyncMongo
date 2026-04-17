@@ -54,10 +54,6 @@ class AsyncMongoDB {
 		private readonly array   $uriOptions,
 		private readonly array   $driverOptions
 	) {
-
-		if ($poolLimit !== 1) {
-			throw new InvalidArgumentException("In AsyncMongo v1.4.1, pool limit is fixed to 1. (See: AsyncMongo#2)");
-		}
 		$this->nextTrackId = 0;
 		$this->sleeperEntry = $server->getTickSleeper()->addNotifier(function(): void {
 			assert($this->threadPool instanceof MongoDBThreadPool);
@@ -87,7 +83,7 @@ class AsyncMongoDB {
 	public function getUriOptions(): array {
 		return $this->uriOptions;
 	}
-	
+
 	public function getUri(): ?string {
 		return $this->uri;
 	}
@@ -141,7 +137,7 @@ class AsyncMongoDB {
 				} else {
 					if ($catchError === null && $overrideCatchError === null) {
 						$e = $executionResult->getException();
-						throw new MongoDBException("Mongo driver exception: " . $e->getMessage(), $e->getCode(), $e);
+						throw new RuntimeException("Uncatched MongoDB driver exception: " . $e->getMessage(), $e->getCode(), $e);
 					}
 
 					if ($catchError !== null && $overrideCatchError === null) {
@@ -157,7 +153,7 @@ class AsyncMongoDB {
 			if ($operation instanceof ISessionHolder && $operation->getSessionNullable() !== null) {
 				$channel = $this->threadPool->getSessionStoreIdManager()->inquireThreadNumberFor($operation->getSessionNotNull()->getStoreId());
 			}
-
+			
 			$this->threadPool->schedule($operation, $channel);
 		});
 
@@ -280,8 +276,8 @@ class AsyncMongoDB {
 		array $options = []
 	): MongoStartSessionOperation {
 		return $this->track(new MongoStartSessionOperation($options), function(MongoSessionResult $result, int $trackId, ?callable $original): void {
-			$result->getSession()->makeSyncable(function(?callable $onSync) use ($result): void {
-				$this->syncSessionState($result->getSession())->schedule($onSync);
+			$result->getSession()->makeSyncable(function(?callable $onSync, ?callable $catchError) use ($result): void {
+				$this->syncSessionState($result->getSession())->schedule($onSync, $catchError);
 			});
 
 			if ($original !== null) {
@@ -298,14 +294,14 @@ class AsyncMongoDB {
 		SessionMediator $sessionMediator
 	): MongoSyncSessionOperation {
 		return $this->track(new MongoSyncSessionOperation($sessionMediator), function(MongoSessionResult $result, int $trackId, ?callable $original) use ($sessionMediator): void {
-			$sessionMediator->makeSyncable(function(?callable $onSync) use ($result, $sessionMediator): void {
-				$this->syncSessionState($sessionMediator)->schedule($onSync);
+			$sessionMediator->makeSyncable(function(?callable $onSync, ?callable $catchError) use ($result, $sessionMediator): void {
+				$this->syncSessionState($sessionMediator)->schedule($onSync, $catchError);
 			});
 
 			$sessionMediator->updateStatus($result->getSession()->getInboundStatus());
 
 			if ($original !== null) {
-				$original($result, $trackId);
+				$original($result->getSession(), $trackId);
 			}
 		});
 	}

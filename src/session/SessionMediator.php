@@ -35,6 +35,7 @@ class SessionMediator {
 		$this->syncInProgress = false;
 	}
 
+
 	public function makeSyncable(callable $callback): void {
 		if ($this->syncCallback !== null) {
 			throw new RuntimeException("Already sync-able");
@@ -45,10 +46,11 @@ class SessionMediator {
 
 	/**
 	 * @param callable|null $onSync
+	 * @param callable|null $catchError
 	 * @param bool $force Sync forcefully
 	 * @return $this
 	 */
-	public function sync(?callable $onSync = null, bool $force = false): static {
+	public function sync(?callable $onSync = null, ?callable $catchError = null, bool $force = false): static {
 		if ($this->syncCallback === null) {
 			throw new RuntimeException("Not sync-able");
 		}
@@ -65,7 +67,7 @@ class SessionMediator {
 		$this->syncCallback = null;
 		$this->syncInProgress = true;
 
-		($callback)($onSync);
+		($callback)($onSync, $catchError);
 
 		return $this;
 	}

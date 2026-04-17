@@ -16,6 +16,20 @@ class MongoUpdateManyOperation extends MongoExecutableOperation {
 		parent::__construct($databaseName, $collectionName, $options);
 	}
 
+	/**
+	 * @return mixed
+	 */
+	public function getUpdate() {
+		return $this->update;
+	}
+
+	/**
+	 * @return mixed
+	 */
+	public function getFilter() {
+		return $this->filter;
+	}
+
 	public function createExecutable(): UpdateMany {
 		return new UpdateMany(
 			$this->databaseName,

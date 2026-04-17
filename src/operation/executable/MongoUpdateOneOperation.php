@@ -16,6 +16,20 @@ class MongoUpdateOneOperation extends MongoExecutableOperation {
 		parent::__construct($databaseName, $collectionName, $options);
 	}
 
+	/**
+	 * @return mixed
+	 */
+	public function getFilter() {
+		return $this->filter;
+	}
+
+	/**
+	 * @return mixed
+	 */
+	public function getUpdate() {
+		return $this->update;
+	}
+
 	public function createExecutable(): UpdateOne {
 		return new UpdateOne(
 			$this->databaseName,
